@@ -48,7 +48,7 @@ class Field:
         """
         return str(self.value) + " "
         # return "[" + str(self.value) + "::" + str(self.possible) + "]"
-        # return "[(" + str(self.x) + ":" + str(self.y) + ")->" + str(self.value) + "]"
+        #return "[(" + str(self.x) + ":" + str(self.y) + ")->" + str(self.value) + "]"
 
     def __repr__(self):
         """

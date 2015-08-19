@@ -1,6 +1,6 @@
 __author__ = 'MrTrustworthy'
 
-
+import pdb
 
 class Solver:
     """
@@ -28,31 +28,37 @@ class Solver:
         go_on = True
 
         while go_on and not self.sudoku.is_solved():
+
             go_on = False
 
             found_possibility = self.eliminate_possibilities()
 
-            found_exclusive = False
+            found_unique = self.write_uniques()
 
-            for tuple_length in range(2,6): #2-5
-                new_exclusive = self.eliminate_exclusives(tuple_length)
+            found_exclusive = False
+            for set_length in range(2,9): #2-8
+                new_exclusive = self.eliminate_exclusives(set_length)
                 found_exclusive = found_exclusive or new_exclusive
+
 
             found_new_value = self.write_definite()
 
             # determine whether we made progress
-            go_on = found_exclusive or found_new_value or found_possibility
-            #print(found_exclusive, found_new_value, found_possibility)
+            go_on = found_exclusive or found_new_value or found_possibility or found_unique
 
-        self.print_result()
+
+        if self.sudoku.is_solved() and self.sudoku.is_correct():
+            self.print_result()
+        else:
+            self.print_error()
 
 
     def get_groups(self):
         """
+        Utility function to avoid code duplication
         :return: All Rows, Cols and Boxes in an array
         """
         return self.sudoku.get_rows() + self.sudoku.get_cols() + self.sudoku.get_boxes()
-
 
 
     def eliminate_possibilities(self):
@@ -72,6 +78,7 @@ class Solver:
             for field in group:
                 if not field.solved and number in field.possible:
                     field.possible.remove(number)
+                    #if len(field.possible) == 0: pdb.set_trace()
                     global removed_possibility
                     removed_possibility = True
 
@@ -131,6 +138,33 @@ class Solver:
 
         return found_tuple
 
+    def write_uniques(self):
+        """
+        if a value only appears once in a group as possibility, write it
+        :return:
+        """
+        #return False
+        wrote_unique = False
+
+        for group in self.get_groups():
+
+            possible_numbers = list(range(1,10))
+            for field in group:
+                if field.solved:
+                    possible_numbers.remove(field.value)
+
+            for number in possible_numbers:
+                # all fields that have this number as possibility
+                fields = list(filter(lambda fld: not fld.solved and number in fld.possible, group))
+
+                # if there is only one, fill it!
+                if len(fields) == 1:
+                    fields[0].set_value(number)
+                    self.eliminate_possibilities()
+                    self.eliminate_exclusives()
+                    wrote_unique = True
+
+        return wrote_unique
 
     def write_definite(self):
         """
@@ -139,11 +173,12 @@ class Solver:
         """
         found_definite = False
         for field in self.sudoku.fields:
-            # if not field.solved: print(len(field.possible))
+
             if not field.solved and len(field.possible) <= 1:
                 # print("Determined single value for", field.x, ":", field.y, "to be", field.possible[0])
                 field.set_value(field.possible[0])
                 found_definite = True
+
         return found_definite
 
 
@@ -154,3 +189,8 @@ class Solver:
         print("Correct:", self.sudoku.is_correct())
         print("Result:\n" + str(self.sudoku))
         print(20 * "*")
+
+    def print_error(self):
+        print("Couldn't solve sudoku!")
+        print("Correct so far:", self.sudoku.is_correct())
+        print(str(self.sudoku))
